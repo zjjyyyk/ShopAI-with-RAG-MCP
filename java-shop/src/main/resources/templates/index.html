@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能商城 - AI客服示例</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+        }
+        
+        .header nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 16px;
+            transition: opacity 0.3s;
+        }
+        
+        .header nav a:hover {
+            opacity: 0.8;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .hero {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .hero h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .hero p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 60px;
+        }
+        
+        .product-info {
+            padding: 20px;
+        }
+        
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .product-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .product-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .product-stock {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        /* 客服窗口 */
+        .chat-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        
+        .chat-button:hover {
+            transform: scale(1.1);
+        }
+        
+        .chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .chat-window.active {
+            display: flex;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header h3 {
+            font-size: 18px;
+        }
+        
+        .chat-close {
+            cursor: pointer;
+            font-size: 24px;
+            line-height: 1;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .chat-message-content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        
+        .chat-message.ai .chat-message-content {
+            background: white;
+            color: #333;
+        }
+        
+        .chat-message.user .chat-message-content {
+            background: #667eea;
+            color: white;
+        }
+        
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .chat-send {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .chat-send:hover {
+            background: #5568d3;
+        }
+        
+        /* 加载状态样式 */
+        .chat-message.loading {
+            opacity: 0.7;
+        }
+        
+        .chat-message.loading .chat-message-content {
+            background: #f0f0f0 !important;
+            color: #999 !important;
+            font-style: italic;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* 用户消息强调样式 */
+        .chat-message.user[data-permanent="true"] .chat-message-content {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>🚴 智能商城</h1>
+            <nav>
+                <a href="/">首页</a>
+                <a href="/orders">我的订单</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h2>欢迎来到智能商城 AI 客服示例</h2>
+            <p>这是一个展示 AI 客服能力的示例项目。支持 RAG 知识检索和 MCP 工具调用。点击右下角的客服按钮开始对话!</p>
+        </div>
+
+        <div class="products">
+            <div th:each="product : ${products}" class="product-card" th:onclick="'showProductModal(' + ${product.id} + ')'">
+                <div class="product-image">🚴</div>
+                <div class="product-info">
+                    <div class="product-name" th:text="${product.name}">商品名称</div>
+                    <div class="product-desc" th:text="${product.description}">商品描述</div>
+                    <div class="product-footer">
+                        <div class="product-price">¥<span th:text="${product.price}">0</span></div>
+                        <div class="product-stock">库存: <span th:text="${product.stock}">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客服按钮 -->
+    <div class="chat-button" onclick="toggleChat()">💬</div>
+
+    <!-- 客服窗口 -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <h3>🤖 AI 客服</h3>
+            <span class="chat-close" onclick="toggleChat()">×</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message ai">
+                <div class="chat-message-content">
+                    您好!我是智能客服助手。我可以帮您查询商品信息、订单状态,或者解答其他问题。有什么可以帮您的吗?
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="输入您的问题..." onkeypress="handleChatKeyPress(event)">
+            <button class="chat-send" onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+
+    <!-- 下单 Modal -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content">
+            <h3>下单购买</h3>
+            <input type="hidden" id="orderProductId">
+            <div class="form-group">
+                <label>商品名称</label>
+                <input type="text" id="orderProductName" readonly>
+            </div>
+            <div class="form-group">
+                <label>购买数量</label>
+                <input type="number" id="orderQuantity" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>姓名</label>
+                <input type="text" id="orderCustomerName" placeholder="请输入您的姓名">
+            </div>
+            <div class="form-group">
+                <label>电话</label>
+                <input type="text" id="orderCustomerPhone" placeholder="请输入您的电话">
+            </div>
+            <div class="form-group">
+                <label>收货地址</label>
+                <textarea id="orderShippingAddress" rows="3" placeholder="请输入收货地址"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeOrderModal()">取消</button>
+                <button class="btn" onclick="submitOrder()">确认下单</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const products = /*[[${products}]]*/ [];
+        /*]]>*/
+
+        function toggleChat() {
+            document.getElementById('chatWindow').classList.toggle('active');
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 存储聊天历史（最多保留N轮对话，即2N条消息）
+        let chatHistory = [];
+        let MAX_HISTORY = 20; // 默认值，会从后端加载
+        
+        // 从后端加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/chat/config');
+                const config = await response.json();
+                MAX_HISTORY = config.maxHistoryRounds;
+                console.log('📊 聊天配置已加载: 最大记忆轮数 =', MAX_HISTORY);
+            } catch (error) {
+                console.warn('⚠️ 加载配置失败，使用默认值:', MAX_HISTORY, error);
+            }
+        }
+        
+        // 页面加载时获取配置
+        loadConfig();
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 清空输入框
+            input.value = '';
+            
+            // 1. 先添加到历史记录
+            chatHistory.push({ role: 'user', content: message });
+            
+            // 2. 显示用户消息（固定显示，不会被删除）
+            const userMsgId = addMessage(message, 'user');
+            console.log('✅ 用户消息已添加到DOM:', userMsgId);
+            
+            // 3. 显示AI加载状态（会被删除替换）
+            const loadingId = addMessage('正在思考...', 'ai', true);
+            console.log('⏳ 加载消息已添加:', loadingId);
+            
+            try {
+                // 准备历史消息（最多5轮）
+                const historyToSend = chatHistory.slice(-MAX_HISTORY * 2);
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        userId: 'web-user',
+                        sessionId: getSessionId(),
+                        history: historyToSend
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // 4. 移除加载消息
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                    console.log('🗑️ 加载消息已移除');
+                }
+                
+                // 5. 显示AI回复
+                const aiMsgId = addMessage(data.reply, 'ai');
+                console.log('✅ AI回复已添加:', aiMsgId);
+                
+                // 6. 添加AI回复到历史记录
+                chatHistory.push({ role: 'assistant', content: data.reply });
+                
+                // 7. 保持历史记录在最大限制内
+                if (chatHistory.length > MAX_HISTORY * 2) {
+                    chatHistory = chatHistory.slice(-MAX_HISTORY * 2);
+                }
+                
+                console.log('📊 当前聊天历史长度:', chatHistory.length);
+                
+            } catch (error) {
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                addMessage('抱歉,服务暂时不可用,请稍后再试。', 'ai');
+                console.error('❌ Chat error:', error);
+            }
+        }
+
+        function addMessage(content, type, isLoading = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            // 使用更精确的时间戳和随机数，确保唯一性
+            const messageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `chat-message ${type}`;
+            if (isLoading) {
+                messageDiv.classList.add('loading');
+                messageDiv.setAttribute('data-removable', 'true'); // 标记可删除
+            } else if (type === 'user') {
+                messageDiv.setAttribute('data-permanent', 'true'); // 标记用户消息为永久
+            }
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'chat-message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            
+            // 平滑滚动到底部
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 10);
+            
+            console.log(`📝 消息已添加 [${type}]: ${messageId} - "${content.substring(0, 30)}..."`);
+            
+            return messageId;
+        }
+
+        function getSessionId() {
+            let sessionId = sessionStorage.getItem('chatSessionId');
+            if (!sessionId) {
+                sessionId = 'session-' + Date.now();
+                sessionStorage.setItem('chatSessionId', sessionId);
+            }
+            return sessionId;
+        }
+
+        function showProductModal(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            document.getElementById('orderProductId').value = product.id;
+            document.getElementById('orderProductName').value = product.name;
+            document.getElementById('orderModal').classList.add('active');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.remove('active');
+        }
+
+        async function submitOrder() {
+            const productId = document.getElementById('orderProductId').value;
+            const quantity = document.getElementById('orderQuantity').value;
+            const customerName = document.getElementById('orderCustomerName').value;
+            const customerPhone = document.getElementById('orderCustomerPhone').value;
+            const shippingAddress = document.getElementById('orderShippingAddress').value;
+            
+            if (!customerName || !customerPhone || !shippingAddress) {
+                alert('请填写完整的订单信息');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: parseInt(productId),
+                        quantity: parseInt(quantity),
+                        customerName,
+                        customerPhone,
+                        shippingAddress
+                    })
+                });
+                
+                if (response.ok) {
+                    const order = await response.json();
+                    alert('下单成功!订单号: ' + order.orderNumber);
+                    closeOrderModal();
+                    
+                    // 清空表单
+                    document.getElementById('orderCustomerName').value = '';
+                    document.getElementById('orderCustomerPhone').value = '';
+                    document.getElementById('orderShippingAddress').value = '';
+                    document.getElementById('orderQuantity').value = '1';
+                } else {
+                    const error = await response.json();
+                    alert('下单失败: ' + error.error);
+                }
+            } catch (error) {
+                alert('下单失败,请稍后再试');
+                console.error('Order error:', error);
+            }
+        }
+
+        // 点击modal外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target === modal) {
+                closeOrderModal();
+            }
+        }
+    </script>
+</body>
+</html>

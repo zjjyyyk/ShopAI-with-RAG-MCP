@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: ai-shop
+  
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:/data/shop;MODE=MySQL;AUTO_SERVER=TRUE}
+    driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+# 自定义配置
+app:
+  ai-service:
+    url: ${GO_AI_SERVICE_URL:http://localhost:8081}
+
+# 聊天配置
+chat:
+  max-history-rounds: ${MAX_CHAT_HISTORY_ROUNDS:20}
+
+# Actuator 配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    com.example.shop: INFO
+    org.hibernate.SQL: DEBUG

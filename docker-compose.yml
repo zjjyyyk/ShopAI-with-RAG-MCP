@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # Chroma 向量数据库
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - ALLOW_RESET=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - ai-shop-network
+
+  # Java 商城服务
+  java-shop:
+    build:
+      context: ./java-shop
+      dockerfile: Dockerfile
+    container_name: java-shop
+    ports:
+      - "${JAVA_SHOP_PORT:-8080}:8080"
+    volumes:
+      - shop-data:/data
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/shop;MODE=MySQL;AUTO_SERVER=TRUE
+      - GO_AI_SERVICE_URL=http://go-ai-service:${GO_AI_SERVICE_PORT:-8081}
+      - MAX_CHAT_HISTORY_ROUNDS=${MAX_CHAT_HISTORY_ROUNDS:-20}
+    networks:
+      - ai-shop-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Go AI 客服服务（包含内嵌的 Python MCP Server）
+  go-ai-service:
+    build:
+      context: .
+      dockerfile: ./go-ai-service/Dockerfile
+    container_name: go-ai-service
+    ports:
+      - "${GO_AI_SERVICE_PORT:-8081}:8081"
+    environment:
+      # 核心配置
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - CHROMA_HOST=${CHROMA_HOST:-chroma}
+      - CHROMA_PORT=${CHROMA_PORT:-8000}
+      - JAVA_SHOP_URL=${JAVA_SHOP_URL:-http://java-shop:8080}
+      - PORT=${GO_AI_SERVICE_PORT:-8081}
+      # UTF-8 字符编码支持（修复中文乱码）
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
+      # MCP Server 配置
+      - MCP_SERVER_PATH=/root/mcp-server/server.py
+    networks:
+      - ai-shop-network
+    depends_on:
+      - chroma
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 知识库初始化服务(一次性任务)
+  knowledge:
+    build:
+      context: ./knowledge
+      dockerfile: Dockerfile
+    container_name: knowledge-init
+    environment:
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - CHROMA_HOST=${CHROMA_HOST:-chroma}
+      - CHROMA_PORT=${CHROMA_PORT:-8000}
+      # UTF-8 字符编码支持（修复中文乱码）
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
+    networks:
+      - ai-shop-network
+    depends_on:
+      - chroma
+    # 保持容器运行,方便手动执行初始化脚本
+    command: tail -f /dev/null
+
+networks:
+  ai-shop-network:
+    driver: bridge
+
+volumes:
+  chroma-data:
+  shop-data:
